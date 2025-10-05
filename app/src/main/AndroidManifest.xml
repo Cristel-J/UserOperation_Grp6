@@ -12,6 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UserOperation_Grp6">
         <activity
+            android:name=".EditProfile"
+            android:exported="false" />
+        <activity
+            android:name=".AddNewProfile"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity2"
             android:exported="false" />
         <activity
