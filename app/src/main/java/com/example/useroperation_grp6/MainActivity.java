@@ -4,126 +4,99 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ListView;
-import android.widget.Toast;
+import android.widget.*;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+
     Button btnNew, btnPrint;
-    ListView studlistview;
-    ArrayList<String> studentlist;
+    ListView studListView;
+    ArrayList<String> studentList;
     ArrayAdapter<String> adapter;
     DBHelper dbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -
-                > {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-        v.setPadding(systemBars.left, systemBars.top, systemBars.right,
-                systemBars.bottom);
-        return insets;
-});
-//dbHelper = new DBHelper(this);
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+
         dbHelper = new DBHelper(getApplicationContext());
         btnNew = findViewById(R.id.btnNew);
         btnPrint = findViewById(R.id.btnPrint);
-        studlistview = findViewById(R.id.studlistview);
+        studListView = findViewById(R.id.studlistview);
+
         loadStudListView();
-        studlistview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long
-                    l) {
-                String items = studentlist.get(i);
-                String item[] = items.split(":");
-                String sid = item[0];
-                Intent intent = new Intent(MainActivity.this, EditProfile.class);
-                Bundle bundle = new Bundle();
-                bundle.putString("sid",sid);
-                intent.putExtras(bundle);
-                startActivityForResult(intent,1);
-            }
+
+        studListView.setOnItemClickListener((adapterView, view, i, l) -> {
+            String item = studentList.get(i);
+            String[] parts = item.split(":");
+            String sid = parts[0];
+            Intent intent = new Intent(MainActivity.this, EditProfile.class);
+            intent.putExtra("sid", sid);
+            startActivity(intent);
         });
-        studlistview.setOnItemLongClickListener(new
-                                                        AdapterView.OnItemLongClickListener() {
-                                                            @Override
-                                                            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i,
-                                                                                           long l) {
-                                                                String items = studentlist.get(i);
 
-                                                                String item[] = items.split(":");
-                                                                String sid = item[0];
-                                                                AlertDialog.Builder info = new AlertDialog.Builder(MainActivity.this);
-                                                                info.setTitle("Confirmation");
-                                                                info.setMessage("Do you really want to delete this record?");
-                                                                info.setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                                                                    @Override
+        studListView.setOnItemLongClickListener((adapterView, view, i, l) -> {
+            String item = studentList.get(i);
+            String[] parts = item.split(":");
+            String sid = parts[0];
 
-                                                                    public void onClick(DialogInterface dialogInterface, int i) {
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Confirmation")
+                    .setMessage("Do you really want to delete this record?")
+                    .setPositiveButton("YES", (dialog, which) -> {
+                        dbHelper.deleteRecord(sid);
+                        Toast.makeText(MainActivity.this, "Record Deleted!", Toast.LENGTH_LONG).show();
+                        loadStudListView();
+                    })
+                    .setNegativeButton("NO", null)
+                    .show();
+            return true;
+        });
 
-                                                                        dbHelper.deleteRecord(sid);
-                                                                        Toast.makeText(MainActivity.this, "Record Deleted!",
-                                                                                Toast.LENGTH_LONG).show();
-                                                                        loadStudListView();
-                                                                    }
-                                                                });
-                                                                info.setNegativeButton("NO", new DialogInterface.OnClickListener() {
-                                                                    @Override
-                                                                    public void onClick(DialogInterface dialogInterface, int i) {
-                                                                    }
-                                                                });
-                                                                AlertDialog box = info.create();
-                                                                box.show();
-                                                                return false;
-                                                            }
-                                                        });
-        btnNew.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent (MainActivity.this, AddNewProfile.class);
-                startActivity(intent);
-            }
+        btnNew.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, AddNewProfile.class);
+            startActivity(intent);
         });
     }
-    public void loadStudListView(){
-        studentlist = new ArrayList<>();
-        studentlist.clear();
-        Cursor cursor =dbHelper.getAllRecords();
-        if(cursor.getCount() == 0){
-            AlertDialog.Builder info = new AlertDialog.Builder(this);
-            info.setMessage("No record found! ");
-            info.setPositiveButton("Close", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                }
-            });
-            AlertDialog box = info.create();
-            box.show();
-        }else{
-            while (cursor.moveToNext()){
-                String record = cursor.getString(0) + ":" + cursor.getString(1) + " " +
-                        cursor.getString(2);
-                studentlist.add(record);
-            };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadStudListView(); // Refresh list when returning
+    }
+
+    private void loadStudListView() {
+        studentList = new ArrayList<>();
+        Cursor cursor = dbHelper.getAllRecords();
+
+        if (cursor.getCount() == 0) {
+            new AlertDialog.Builder(this)
+                    .setMessage("No record found!")
+                    .setPositiveButton("Close", null)
+                    .show();
+        } else {
+            while (cursor.moveToNext()) {
+                String record = cursor.getString(0) + ":" + cursor.getString(1) + " " + cursor.getString(2);
+                studentList.add(record);
+            }
         }
         cursor.close();
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,
-                studentlist);
 
-        studlistview.setAdapter(adapter);
-        adapter.notifyDataSetChanged();
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, studentList);
+        studListView.setAdapter(adapter);
     }
 }

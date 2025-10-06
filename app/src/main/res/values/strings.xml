@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">UserOperation_Grp6</string>
+    <string name="app_name">StudentViewerApp</string>
+
+    <!-- Spinner data for course list -->
+    <string-array name="courses">
+        <item>BSIT</item>
+        <item>BSCS</item>
+        <item>BSIS</item>
+        <item>BSCE</item>
+        <item>BSECE</item>
+        <item>BSBA</item>
+        <item>BSA</item>
+        <item>BSHM</item>
+    </string-array>
 </resources>
